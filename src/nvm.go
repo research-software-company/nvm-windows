@@ -369,6 +369,31 @@ func findLatestSubVersion(version string) string {
 	return latest
 }
 
+func findVersion(version string) string {
+  v := node.GetInstalled(env.root)
+  prefix := strings.Split(version, ".")
+  var options [] string
+  version = "none"
+  for i := 0; i < len(v); i++ {
+    ver := v[i][1:]
+    isprefix:= strings.HasPrefix(ver, prefix[0]) // true
+    if isprefix == true{
+      options = append(options, ver)
+    }
+}
+if len(options) > 1{
+  fmt.Println("there is too many options, please choose: ")
+  for i:=0; i < len(options); i++ {
+      fmt.Println(cleanVersion(options[i]))
+  }
+  version = "multi"
+  } else if len(options) == 1{
+      version = options[0]
+}
+return version
+}
+
+
 func use(version string, cpuarch string) {
   if version == "32" || version == "64" {
     cpuarch = version
@@ -379,22 +404,28 @@ func use(version string, cpuarch string) {
   cpuarch = arch.Validate(cpuarch)
 
   version = cleanVersion(version)
-
+  originalVersion:= version
   // Make sure the version is installed. If not, warn.
-  if !node.IsVersionInstalled(env.root,version,cpuarch) {
-    fmt.Println("node v"+version+" ("+cpuarch+"-bit) is not installed.")
-    if cpuarch == "32" {
-      if node.IsVersionInstalled(env.root,version,"64") {
-        fmt.Println("\nDid you mean node v"+version+" (64-bit)?\nIf so, type \"nvm use "+version+" 64\" to use it.")
-      }
-    }
-    if cpuarch == "64" {
-      if node.IsVersionInstalled(env.root,version,"32") {
-        fmt.Println("\nDid you mean node v"+version+" (32-bit)?\nIf so, type \"nvm use "+version+" 32\" to use it.")
+if !node.IsVersionInstalled(env.root,originalVersion,cpuarch) {
+   version = findVersion(version)
+   if version =="multi" {
+     return
+   }
+    if version == "none"{
+        fmt.Println("node v"+originalVersion+" ("+cpuarch+"-bit) is not installed.")
+        if cpuarch == "32" {
+            if node.IsVersionInstalled(env.root,originalVersion,"64") {
+            fmt.Println("\nDid you mean node v"+originalVersion+" (64-bit)?\nIf so, type \"nvm use "+originalVersion+" 64\" to use it.")
+          }
+        }
+        if cpuarch == "64" {
+            if node.IsVersionInstalled(env.root,originalVersion,"32") {
+            fmt.Println("\nDid you mean node v"+originalVersion+" (32-bit)?\nIf so, type \"nvm use "+originalVersion+" 32\" to use it.")
       }
     }
     return
-  }
+    }
+	}
 
   // Remove symlink if it already exists
   sym, _ := os.Stat(env.symlink)
